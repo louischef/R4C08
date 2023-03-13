@@ -56,12 +56,22 @@ class Client:
 if __name__ == '__main__':
     
     client = Client(5000)
+    #generation des clées public et private
     (publicKeyC, privKeyC) = client.generateKeys()
+    #declaration de E et N
     (publicKeyCE, publicKeyCN) = str(publicKeyC.e), str(publicKeyC.n)
+
     client.connect()
-    bfile = client.sendMessage(msg=privkey)
-    f = "output/filename"
-    client.saveFile(bytes=bfile, filename=f)
-    msg = client.receiveMessage()
-    print(msg)
+    #envoi du E de la clée publique
+    client.sendMessage(msg=publicKeyCE)
+    #envoi du N de la clée publique
+    client.sendMessage(msg=publicKeyCN)
+    # f = "output/filename"
+    # client.saveFile(bytes=bfile, filename=f)
+    #reception de la clée publique 
+    publicKeySE = client.receiveMessage()
+    print("clée publique du server E " + publicKeySE)
+    
+    publicKeySN = client.receiveMessage()
+    print("clée publique du server N " + publicKeySN)
     client.close()

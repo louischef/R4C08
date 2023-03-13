@@ -34,6 +34,7 @@ class Server:
 
     def generateKeys(self):
         return rsa.newkeys(512)
+
     def close(self):
         if not self.conn == None:
             self.conn.close()  # close the connection
@@ -44,10 +45,23 @@ class Server:
 
 if __name__ == '__main__':
     server = Server(5000)
+    #generation des clées public et private
     (publicKeyS, privKeyS) = server.generateKeys()
-    print(privKeyS)
-    print(publicKeyS)
+    # print(privKeyS)
+    # print(publicKeyS)
+    #declaration de E et N
     (publicKeySE, publicKeySN) = str(publicKeyS.e), str(publicKeyS.n)
+
     server.waitForConnection()
-    server.sendMessage(publicKeySE + "/" + publicKeySN)
+    #envoi du E de la clée publique
+    server.sendMessage(msg=publicKeySE)
+    #envoi du N de la clée publique
+    server.sendMessage(msg=publicKeySN)
+    #reception des clées publique client
+    publicKeyCE = server.receiveMessage()
+    publicKeyCN = server.receiveMessage()
+    print("clée public du client E " + publicKeyCE + "~~~~")
+    print("clée public du client N " + publicKeyCN)
+
+    print(publicKeyCN)
     server.close()
