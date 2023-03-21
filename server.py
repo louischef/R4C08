@@ -1,7 +1,8 @@
 
 import socket
 import rsa
-
+from rsa.key import *
+import os
 class Server:
     def __init__(self, port):
         # get the hostname
@@ -53,15 +54,19 @@ if __name__ == '__main__':
     (publicKeySE, publicKeySN) = str(publicKeyS.e), str(publicKeyS.n)
 
     server.waitForConnection()
+    #reception des clées publique client
+    publicKeyCE = server.receiveMessage()
+    publicKeyCN = server.receiveMessage()
     #envoi du E de la clée publique
     server.sendMessage(msg=publicKeySE)
     #envoi du N de la clée publique
     server.sendMessage(msg=publicKeySN)
-    #reception des clées publique client
-    publicKeyCE = server.receiveMessage()
-    publicKeyCN = server.receiveMessage()
-    print("clée public du client E " + publicKeyCE + "~~~~")
-    print("clée public du client N " + publicKeyCN)
-
-    print(publicKeyCN)
+    pubKeyC = PublicKey(int(publicKeyCN), int(publicKeyCE))
+    #génération de la clée AES
+    AES = os.urandom(32)
+    print(AES)
+    #cryptage de la clée AES avec la clée publique du client   
+    aes_encrypt = rsa.encrypt(AES, pubKeyC)
+    #sending AES key
+    server.sendMessage(str(aes_encrypt))
     server.close()

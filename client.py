@@ -1,5 +1,6 @@
 import rsa
 import socket
+from rsa.key import *
 
 class Client:
     def __init__(self, port):
@@ -68,10 +69,17 @@ if __name__ == '__main__':
     client.sendMessage(msg=publicKeyCN)
     # f = "output/filename"
     # client.saveFile(bytes=bfile, filename=f)
+    
     #reception de la clée publique 
     publicKeySE = client.receiveMessage()
-    print("clée publique du server E " + publicKeySE)
-    
     publicKeySN = client.receiveMessage()
-    print("clée publique du server N " + publicKeySN)
+    pubKeyS = PublicKey(int(publicKeySE), int(publicKeySN))
+    #reception de la clée AES
+    encrpyt_aesServerKey = client.receiveMessage()
+    #conversion en bytes
+    bytes_aesServer =eval(encrpyt_aesServerKey)
+    #decryptage avec clée privée
+    decrpytedAesServerKey = rsa.decrypt(bytes_aesServer, privKeyC)
+
+    print(decrpytedAesServerKey)
     client.close()
