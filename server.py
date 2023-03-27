@@ -2,14 +2,19 @@
 import socket
 import rsa
 from rsa.key import *
-import os
+import random
+import pyAesCrypt
+import hashlib
+
+
 class Server:
     def __init__(self, port):
         # get the hostname
         host = socket.gethostname()
         self.server_socket = socket.socket()  # get instance
         # look closely. The bind() function takes tuple as argument
-        self.server_socket.bind((host, port))  # bind host address and port together
+        # bind host address and port together
+        self.server_socket.bind((host, port))
         self.conn = None
 
     def waitForConnection(self):
@@ -40,33 +45,51 @@ class Server:
         if not self.conn == None:
             self.conn.close()  # close the connection
         else:
-            raise Exception("Erreur: la connection a été fermée avant d'être instanciée.")
+            raise Exception(
+                "Erreur: la connection a été fermée avant d'être instanciée.")
 
+def sumfile(filePath):
+    fileObj = open(filePath, 'rb')
+    m = hashlib.md5()
+    while True:
+        d = fileObj.read(8096)
+        if not d:
+            break
+        m.update(d)
+    return m.hexdigest()
 
 
 if __name__ == '__main__':
     server = Server(5000)
-    #generation des clées public et private
+    # generation des clées public et private
     (publicKeyS, privKeyS) = server.generateKeys()
     # print(privKeyS)
     # print(publicKeyS)
-    #declaration de E et N
+    # declaration de E et N
     (publicKeySE, publicKeySN) = str(publicKeyS.e), str(publicKeyS.n)
 
     server.waitForConnection()
-    #reception des clées publique client
+    # reception des clées publique client
     publicKeyCE = server.receiveMessage()
     publicKeyCN = server.receiveMessage()
-    #envoi du E de la clée publique
+    # envoi du E de la clée publique
     server.sendMessage(msg=publicKeySE)
-    #envoi du N de la clée publique
+    # envoi du N de la clée publique
     server.sendMessage(msg=publicKeySN)
     pubKeyC = PublicKey(int(publicKeyCN), int(publicKeyCE))
-    #génération de la clée AES
-    AES = os.urandom(32)
-    print(AES)
-    #cryptage de la clée AES avec la clée publique du client   
-    aes_encrypt = rsa.encrypt(AES, pubKeyC)
-    #sending AES key
+    # génération de la clée AES
+    AES = str(random.randint(1, 1000000000000000000))
+    AES_asbyes = str.encode(AES)
+    # cryptage de la clée AES avec la clée publique du client
+    aes_encrypt = rsa.encrypt(AES_asbyes, pubKeyC)
+    # sending AES key
     server.sendMessage(str(aes_encrypt))
+
+    # cryptage du fichier
+    pyAesCrypt.encryptFile("input/filename.txt", "input/filename.txt.aes", AES)
+    # calcul du hash du fichier
+    hash = sumfile("input/filename.txt.aes")
+
+    server.sendMessage(hash)
+    server.sendFile("input/filename.txt.aes")
     server.close()

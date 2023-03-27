@@ -1,6 +1,8 @@
 import rsa
 import socket
 from rsa.key import *
+import pyAesCrypt
+import hashlib
 
 class Client:
     def __init__(self, port):
@@ -48,11 +50,22 @@ class Client:
     def generateKeys(self):
         return rsa.newkeys(512)
 
+
     def close(self):
         if not self.client_socket == None:
             self.client_socket.close()  # close the connection
         else:
             raise Exception("Erreur: la connection a été fermée avant d'être instanciée.")
+
+def sumfile(filePath):
+    fileObj = open(filePath, 'rb')
+    m = hashlib.md5()
+    while True:
+        d = fileObj.read(8096)
+        if not d:
+            break
+        m.update(d)
+    return m.hexdigest()
 
 if __name__ == '__main__':
     
@@ -82,4 +95,19 @@ if __name__ == '__main__':
     decrpytedAesServerKey = rsa.decrypt(bytes_aesServer, privKeyC)
 
     print(decrpytedAesServerKey)
+    intAesServerKey = (decrpytedAesServerKey.decode())
+    hashserver = client.receiveMessage()
+    
+
+    aesfile = client.receiveFile()
+
+    fout = "output/filename.txt.aes"
+    client.saveFile(bytes=aesfile, filename=fout)
+
+    hashclient = sumfile("output/filename.txt.aes")
+
+    if str(hashclient) == str(hashserver):
+        pyAesCrypt.decryptFile("output/filename.txt.aes", "output/finalfilename.txt", intAesServerKey)
+    else:
+        print("mauvais hash calculé.")
     client.close()
