@@ -67,6 +67,14 @@ def sumfile(filePath):
         m.update(d)
     return m.hexdigest()
 
+#check si le hash client = hash server si oui: decrypte si non erreur et fermeture client 
+def checkHash(hashC, hashS, intAesServerKey):
+    if str(hashC) == str(hashS):
+        pyAesCrypt.decryptFile("output/filename.txt.aes", "output/finalfilename.txt", intAesServerKey)
+    else:
+        print("mauvais hash calculé.")
+        client.close()
+
 if __name__ == '__main__':
     
     client = Client(5000)
@@ -76,12 +84,9 @@ if __name__ == '__main__':
     (publicKeyCE, publicKeyCN) = str(publicKeyC.e), str(publicKeyC.n)
 
     client.connect()
-    #envoi du E de la clée publique
-    client.sendMessage(msg=publicKeyCE)
-    #envoi du N de la clée publique
-    client.sendMessage(msg=publicKeyCN)
-    # f = "output/filename"
-    # client.saveFile(bytes=bfile, filename=f)
+    #envoi du E et N de la clée publique
+    client.sendMessage(f"{publicKeyCE}:{publicKeyCN}")
+
     
     #reception de la clée publique 
     publicKeySE = client.receiveMessage()
@@ -93,21 +98,18 @@ if __name__ == '__main__':
     bytes_aesServer =eval(encrpyt_aesServerKey)
     #decryptage avec clée privée
     decrpytedAesServerKey = rsa.decrypt(bytes_aesServer, privKeyC)
-
-    print(decrpytedAesServerKey)
+    #decodage de la clée aes
     intAesServerKey = (decrpytedAesServerKey.decode())
+    #reception du hash du serveur
     hashserver = client.receiveMessage()
-    
-
+    #reception du fichier crypté
     aesfile = client.receiveFile()
-
+    #declaration du chemin du fichier crypté reçu
     fout = "output/filename.txt.aes"
+    #save le fichier crypté dans le bon chemin
     client.saveFile(bytes=aesfile, filename=fout)
-
+    #calcul du hash
     hashclient = sumfile("output/filename.txt.aes")
-
-    if str(hashclient) == str(hashserver):
-        pyAesCrypt.decryptFile("output/filename.txt.aes", "output/finalfilename.txt", intAesServerKey)
-    else:
-        print("mauvais hash calculé.")
+    #appel de la fonction checkhash pour comparer les deux hash pour decrypter le fichier
+    checkHash(hashC=hashclient, hashS=hashserver, intAesServerKey=intAesServerKey)
     client.close()
